@@ -1,6 +1,19 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-neon-cyan: #00FFFF;
+  --color-neon-magenta: #FF00FF;
+  --color-neon-yellow: #FFFF00;
+  --color-neon-red: #FF0000;
+  --color-neon-teal: #008080;
+  --color-neon-purple: #800080;
+
+  --color-void-black: #050505;
+  --color-void-darker: #0a0a0a;
+  --color-void-purple: #1a0b2e;
+
+  --font-mono: "Share Tech Mono", monospace;
+}
 
 html, body, #root {
   margin: 0;
@@ -18,10 +31,7 @@ canvas {
 }
 
 @layer base {
-  @font-face {
-    font-family: 'Share Tech Mono';
-    src: url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 }
 
 .crt::before {

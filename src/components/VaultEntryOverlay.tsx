@@ -11,8 +11,8 @@ const VaultEntryOverlay: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const setGameState = useGameStore((state) => state.setGameState);
 
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { address, isConnected, status, isConnecting } = useAccount();
+  const { connect, error: connectError } = useConnect();
 
   const logSequence = [
     "> CONNECTING TO NEON_VAULT...",
@@ -75,6 +75,16 @@ const VaultEntryOverlay: React.FC = () => {
       }
   }, [progress, assetProgress, isConnected, setGameState]);
 
+  useEffect(() => {
+      if (connectError) {
+          console.error("[SYSTEM] Wallet Connection Error:", connectError);
+      }
+  }, [connectError]);
+
+  useEffect(() => {
+      console.log(`[SYSTEM] Wallet Status: ${status}`);
+  }, [status]);
+
   return (
     <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center z-[100] font-mono overflow-hidden">
       {/* Scanline Effect */}
@@ -129,13 +139,17 @@ const VaultEntryOverlay: React.FC = () => {
                 {!isConnected ? (
                     <div className="flex flex-col items-center gap-4">
                         <div className="text-[10px] tracking-[0.4em] text-neon-magenta animate-pulse">
-                            WAITING_FOR_PILOT_AUTH
+                            {connectError ? 'LINK_FAILURE_RETRY_REQUIRED' : 'WAITING_FOR_PILOT_AUTH'}
                         </div>
                         <button
-                            onClick={() => connect({ connector: injected() })}
-                            className="px-10 py-2 border border-neon-cyan text-neon-cyan text-xs hover:bg-neon-cyan hover:text-black transition-all cursor-pointer pointer-events-auto"
+                            onClick={() => {
+                                console.log("[SYSTEM] User initiated wallet connection");
+                                connect({ connector: injected() });
+                            }}
+                            disabled={isConnecting}
+                            className={`px-10 py-2 border border-neon-cyan text-neon-cyan text-xs hover:bg-neon-cyan hover:text-black transition-all cursor-pointer pointer-events-auto ${isConnecting ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                            INITIALIZE_NEURAL_LINK
+                            {isConnecting ? 'ESTABLISHING_LINK...' : 'INITIALIZE_NEURAL_LINK'}
                         </button>
                     </div>
                 ) : (

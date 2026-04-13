@@ -46,6 +46,7 @@ function App() {
 
   return (
     <Web3Provider>
+      <ErrorBoundary>
       <div className="w-screen h-screen bg-void-black text-neon-cyan font-mono overflow-hidden">
         {gameState === 'MENU' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black">
@@ -69,7 +70,6 @@ function App() {
         {(gameState === 'PLAYING' || gameState === 'FORGE') ? <HUD /> : <></>}
 
         <div className="w-full h-full relative" style={{ minHeight: '100vh', width: '100vw' }}>
-          <ErrorBoundary>
           <Canvas
             shadows
             camera={{ position: [0, 15, 15], fov: 45 }}
@@ -109,9 +109,9 @@ function App() {
               </EffectComposer>
             </ErrorBoundary>
           </Canvas>
-          </ErrorBoundary>
         </div>
       </div>
+      </ErrorBoundary>
     </Web3Provider>
   );
 }
