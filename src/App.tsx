@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useRef } from 'react';
+import { Suspense, useCallback, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Stars } from '@react-three/drei';
 import { Bloom, EffectComposer, ChromaticAberration, Glitch } from '@react-three/postprocessing';
@@ -13,9 +13,22 @@ import HUD from './components/HUD';
 import VaultEntryOverlay from './components/VaultEntryOverlay';
 import ForgeMenu from './components/ForgeMenu';
 import { Web3Provider } from './components/Web3Provider';
+import ErrorBoundary from './components/ErrorBoundary';
+
+const GameLoadingFallback = () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-black text-neon-cyan font-mono">
+        <div className="animate-pulse">INITIALIZING_WORLD_DATA...</div>
+    </div>
+);
 
 function App() {
   const { gameState, setGameState, playerIntegrity, syncValue, tickIntegrityDecay } = useGameStore();
+
+  useEffect(() => {
+    console.log(`[SYSTEM] Game State Transition: ${gameState}`);
+    // Expose for debugging
+    (window as any).gameState = gameState;
+  }, [gameState]);
 
   const startRun = useCallback(async () => {
     try {
@@ -55,12 +68,21 @@ function App() {
         {gameState === 'FORGE' ? <ForgeMenu /> : <></>}
         {(gameState === 'PLAYING' || gameState === 'FORGE') ? <HUD /> : <></>}
 
-        <div className="w-full h-full">
-          <Canvas shadows camera={{ position: [0, 15, 15], fov: 45 }}>
+        <div className="w-full h-full relative" style={{ minHeight: '100vh', width: '100vw' }}>
+          <ErrorBoundary>
+          <Canvas
+            shadows
+            camera={{ position: [0, 15, 15], fov: 45 }}
+            onCreated={({ gl }) => {
+              gl.setClearColor('#050505');
+              console.log("[SYSTEM] WebGL Context Initialized");
+            }}
+            onError={(e) => console.error("[SYSTEM] Canvas Error:", e)}
+          >
             <color attach="background" args={['#050505']} />
             <fog attach="fog" args={['#050505', 10, 50]} />
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<GameLoadingFallback />}>
               <Arena />
               {gameState === 'PLAYING' ? (
                 <>
@@ -75,16 +97,19 @@ function App() {
               <LogicController tickIntegrityDecay={tickIntegrityDecay} />
             </Suspense>
 
-            <EffectComposer>
-              <Bloom luminanceThreshold={0.5} intensity={bloomIntensity} />
-              {playerIntegrity < 30 ? (
-                  <ChromaticAberration offset={new THREE.Vector2(0.005, 0.005)} />
-              ) : <></>}
-              {playerIntegrity < 15 ? (
-                  <Glitch delay={new THREE.Vector2(1, 4)} duration={new THREE.Vector2(0.1, 0.3)} strength={new THREE.Vector2(0.1, 0.5)} />
-              ) : <></>}
-            </EffectComposer>
+            <ErrorBoundary>
+              <EffectComposer multisampling={0} disableNormalPass>
+                <Bloom luminanceThreshold={0.5} intensity={bloomIntensity} />
+                {playerIntegrity < 30 ? (
+                    <ChromaticAberration offset={new THREE.Vector2(0.005, 0.005)} />
+                ) : <></>}
+                {playerIntegrity < 15 ? (
+                    <Glitch delay={new THREE.Vector2(1, 4)} duration={new THREE.Vector2(0.1, 0.3)} strength={new THREE.Vector2(0.1, 0.5)} />
+                ) : <></>}
+              </EffectComposer>
+            </ErrorBoundary>
           </Canvas>
+          </ErrorBoundary>
         </div>
       </div>
     </Web3Provider>

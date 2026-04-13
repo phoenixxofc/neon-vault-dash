@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as THREE from 'three';
 import { useGameStore } from '../store/useGameStore';
 import { useAccount, useConnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
@@ -6,6 +7,7 @@ import { motion } from 'framer-motion';
 
 const VaultEntryOverlay: React.FC = () => {
   const [progress, setProgress] = useState(0);
+  const [assetProgress, setAssetProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const setGameState = useGameStore((state) => state.setGameState);
 
@@ -20,6 +22,22 @@ const VaultEntryOverlay: React.FC = () => {
   ];
 
   useEffect(() => {
+    // THREE.js Asset Loading Manager
+    THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+        const p = Math.round((itemsLoaded / itemsTotal) * 100);
+        setAssetProgress(p);
+        console.log(`[SYSTEM] Loading: ${url} (${itemsLoaded}/${itemsTotal})`);
+    };
+
+    THREE.DefaultLoadingManager.onLoad = () => {
+        console.log("[SYSTEM] Assets fully loaded");
+        setAssetProgress(100);
+    };
+
+    THREE.DefaultLoadingManager.onError = (url) => {
+        console.error(`[SYSTEM] Error loading asset: ${url}`);
+    };
+
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -47,11 +65,15 @@ const VaultEntryOverlay: React.FC = () => {
   }, []);
 
   useEffect(() => {
-      if (progress >= 100 && isConnected) {
-          const timeout = setTimeout(() => setGameState('PLAYING'), 800);
+      const combinedProgress = Math.min(progress, assetProgress || 100);
+      if (combinedProgress >= 100 && isConnected) {
+          const timeout = setTimeout(() => {
+              console.log("[SYSTEM] Entering Vault Arena...");
+              setGameState('PLAYING');
+          }, 800);
           return () => clearTimeout(timeout);
       }
-  }, [progress, isConnected, setGameState]);
+  }, [progress, assetProgress, isConnected, setGameState]);
 
   return (
     <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center z-[100] font-mono overflow-hidden">
@@ -91,7 +113,7 @@ const VaultEntryOverlay: React.FC = () => {
                 className="absolute inset-4 border border-neon-magenta/10 rounded-full border-dashed"
             />
             <div className="text-6xl font-bold text-neon-cyan tracking-tighter">
-                {progress}<span className="text-xl opacity-50">%</span>
+                {Math.min(progress, assetProgress || 100)}<span className="text-xl opacity-50">%</span>
             </div>
         </div>
 
@@ -99,7 +121,7 @@ const VaultEntryOverlay: React.FC = () => {
             <div className="w-full h-1 bg-white/5 relative overflow-hidden">
                 <motion.div
                     className="absolute inset-y-0 left-0 bg-neon-cyan shadow-[0_0_15px_#00FFFF]"
-                    animate={{ width: `${progress}%` }}
+                    animate={{ width: `${Math.min(progress, assetProgress || 100)}%` }}
                 />
             </div>
 
