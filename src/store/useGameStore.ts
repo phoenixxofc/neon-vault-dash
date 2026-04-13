@@ -22,6 +22,7 @@ interface GameState {
     core: string;
     plating: string;
   };
+  useGamepad: boolean;
 
   // Actions
   setGameState: (state: 'MENU' | 'LOADING' | 'PLAYING' | 'FORGE' | 'GAMEOVER') => void;
@@ -33,6 +34,7 @@ interface GameState {
   siphonHeal: () => void;
   spawnEntities: (level: number) => void;
   collectEntity: (id: string) => void;
+  setUseGamepad: (val: boolean) => void;
   resetGame: () => void;
 }
 
@@ -51,6 +53,7 @@ export const useGameStore = create<GameState>((set) => ({
     core: 'MK3_DEFAULT',
     plating: 'MK3_DEFAULT',
   },
+  useGamepad: false,
 
   setGameState: (state) => set({ gameState: state }),
 
@@ -78,10 +81,21 @@ export const useGameStore = create<GameState>((set) => ({
   })),
 
   calculateSync: (isWarningDash = false) => set((state) => {
-    let S = (state.currentLevel * 1000) + (state.totalShards * 10) + (state.playerIntegrity * 50);
+    const L = state.currentLevel;
+    const D = state.totalShards;
+    const I = state.playerIntegrity;
+
+    // Formula: S = (L * 1000) + (D * 10) + (I * 50)
+    let S = (L * 1000) + (D * 10) + (I * 50);
+
     if (isWarningDash) {
       S = Math.floor(S * 1.5);
     }
+
+    if (state.useGamepad) {
+      S = Math.floor(S * 0.8);
+    }
+
     return { syncValue: S };
   }),
 
@@ -106,6 +120,8 @@ export const useGameStore = create<GameState>((set) => ({
     entities: state.entities.filter(e => e.id !== id)
   })),
 
+  setUseGamepad: (val) => set({ useGamepad: val }),
+
   resetGame: () => set({
     playerIntegrity: 100,
     currentLevel: 1,
@@ -113,6 +129,7 @@ export const useGameStore = create<GameState>((set) => ({
     totalShards: 0,
     syncValue: 0,
     gameState: 'MENU',
-    entities: []
+    entities: [],
+    useGamepad: false
   }),
 }));
