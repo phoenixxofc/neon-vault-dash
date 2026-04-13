@@ -9,7 +9,9 @@ const CollisionManager: React.FC<{ playerRef: React.RefObject<THREE.Group> }> = 
     entities,
     collectEntity,
     gameState,
-    calculateSync
+    calculateSync,
+    isSiphonDashing,
+    siphonHeal
   } = useGameStore();
 
   useFrame(() => {
@@ -28,7 +30,11 @@ const CollisionManager: React.FC<{ playerRef: React.RefObject<THREE.Group> }> = 
           collectEntity(entity.id);
           calculateSync();
         } else if (entity.type.startsWith('ENEMY')) {
-          damagePlayer(10);
+          if (isSiphonDashing && entity.type === 'ENEMY_T1') {
+            siphonHeal();
+          } else {
+            damagePlayer(10);
+          }
           collectEntity(entity.id);
           calculateSync();
         }

@@ -21,20 +21,33 @@ interface GameState {
     thrusters: string;
     core: string;
     plating: string;
+    durability: number;
   };
   useGamepad: boolean;
+  isSiphonDashing: boolean;
+  isOnWarningTile: boolean;
+  playerPosition: [number, number, number];
+  externalForce: [number, number, number];
 
   // Actions
   setGameState: (state: 'MENU' | 'LOADING' | 'PLAYING' | 'FORGE' | 'GAMEOVER') => void;
   damagePlayer: (amount: number) => void;
+  decrementDurability: (amount: number) => void;
   repairPlayer: (amount: number, cost: number) => void;
   addShards: (amount: number) => void;
   completeLevel: () => void;
   calculateSync: (isWarningDash?: boolean) => void;
   siphonHeal: () => void;
+  setSiphonDashing: (val: boolean) => void;
+  setIsOnWarningTile: (val: boolean) => void;
+  setPlayerPosition: (pos: [number, number, number]) => void;
+  applyExternalForce: (force: [number, number, number]) => void;
+  resetExternalForce: () => void;
+  greenHexHeal: () => void;
   spawnEntities: (level: number) => void;
   collectEntity: (id: string) => void;
   setUseGamepad: (val: boolean) => void;
+  tickIntegrityDecay: (delta: number) => void;
   resetGame: () => void;
 }
 
@@ -52,18 +65,30 @@ export const useGameStore = create<GameState>((set) => ({
     thrusters: 'MK3_DEFAULT',
     core: 'MK3_DEFAULT',
     plating: 'MK3_DEFAULT',
+    durability: 100,
   },
   useGamepad: false,
+  isSiphonDashing: false,
+  isOnWarningTile: false,
+  playerPosition: [0, 0.5, 0],
+  externalForce: [0, 0, 0],
 
   setGameState: (state) => set({ gameState: state }),
 
   damagePlayer: (amount) => set((state) => {
     const newIntegrity = Math.max(0, state.playerIntegrity - amount);
+    // Also decrement durability as per req
+    const newDurability = Math.max(0, state.equippedParts.durability - 1);
     return {
       playerIntegrity: newIntegrity,
-      gameState: newIntegrity <= 0 ? 'GAMEOVER' : state.gameState
+      gameState: newIntegrity <= 0 ? 'GAMEOVER' : state.gameState,
+      equippedParts: { ...state.equippedParts, durability: newDurability }
     };
   }),
+
+  decrementDurability: (amount) => set((state) => ({
+    equippedParts: { ...state.equippedParts, durability: Math.max(0, state.equippedParts.durability - amount) }
+  })),
 
   repairPlayer: (amount, cost) => set((state) => ({
     playerIntegrity: Math.min(100, state.playerIntegrity + amount),
@@ -103,16 +128,71 @@ export const useGameStore = create<GameState>((set) => ({
     playerIntegrity: Math.min(100, state.playerIntegrity + 5)
   })),
 
+  setSiphonDashing: (val: boolean) => set({ isSiphonDashing: val }),
+  setIsOnWarningTile: (val: boolean) => set({ isOnWarningTile: val }),
+  setPlayerPosition: (pos: [number, number, number]) => set({ playerPosition: pos }),
+  applyExternalForce: (force: [number, number, number]) => set((state) => ({
+      externalForce: [
+          state.externalForce[0] + force[0],
+          state.externalForce[1] + force[1],
+          state.externalForce[2] + force[2]
+      ]
+  })),
+  resetExternalForce: () => set({ externalForce: [0, 0, 0] }),
+  greenHexHeal: () => set((state) => ({
+    playerIntegrity: Math.min(100, state.playerIntegrity + 15)
+  })),
+
   spawnEntities: (level) => set(() => {
     const newEntities: Entity[] = [];
-    const shardCount = 5 + level;
+
+    // Spawning Shards
+    const shardCount = 5 + Math.floor(level / 2);
     for (let i = 0; i < shardCount; i++) {
       newEntities.push({
         id: `shard-${level}-${i}`,
         type: 'SHARD',
-        position: [(Math.random() - 0.5) * 15, 0.5, (Math.random() - 0.5) * 15]
+        position: [(Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20]
       });
     }
+
+    // Spawning Enemies based on Tiers
+    if (level >= 1) {
+        // Tier 1: Levels 1-10 (and up)
+        const t1Count = Math.min(5, Math.ceil(level / 2));
+        for (let i = 0; i < t1Count; i++) {
+            newEntities.push({
+                id: `enemy-t1-${level}-${i}`,
+                type: 'ENEMY_T1',
+                position: [(Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20]
+            });
+        }
+    }
+
+    if (level >= 11) {
+        // Tier 2: Levels 11-20 (and up)
+        const t2Count = Math.min(3, Math.ceil((level - 10) / 3));
+        for (let i = 0; i < t2Count; i++) {
+            newEntities.push({
+                id: `enemy-t2-${level}-${i}`,
+                type: 'ENEMY_T2',
+                position: [(Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20]
+            });
+        }
+    }
+
+    if (level >= 21) {
+        // Tier 3: Levels 21+
+        const t3Count = Math.min(2, Math.ceil((level - 20) / 5));
+        for (let i = 0; i < t3Count; i++) {
+            newEntities.push({
+                id: `enemy-t3-${level}-${i}`,
+                type: 'ENEMY_T3',
+                position: [(Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20]
+            });
+        }
+    }
+
     return { entities: newEntities };
   }),
 
@@ -121,6 +201,14 @@ export const useGameStore = create<GameState>((set) => ({
   })),
 
   setUseGamepad: (val) => set({ useGamepad: val }),
+
+  tickIntegrityDecay: (delta) => set((state) => {
+    if (state.currentLevel >= 30 && state.gameState === 'PLAYING') {
+        const decay = 0.5 * delta;
+        return { playerIntegrity: Math.max(0, state.playerIntegrity - decay) };
+    }
+    return {};
+  }),
 
   resetGame: () => set({
     playerIntegrity: 100,
@@ -133,3 +221,7 @@ export const useGameStore = create<GameState>((set) => ({
     useGamepad: false
   }),
 }));
+
+if (typeof window !== 'undefined') {
+  (window as any).useGameStore = useGameStore;
+}

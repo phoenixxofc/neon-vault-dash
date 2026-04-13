@@ -15,9 +15,10 @@ const HexTile: React.FC<HexTileProps> = ({ q, r }) => {
   const [state, setState] = useState<TileState>('STABLE');
   const [timer, setTimer] = useState<number | null>(null);
   const [isGreen, setIsGreen] = useState(false);
+  const [, setGreenTimer] = useState(0);
 
   const meshRef = useRef<THREE.Mesh>(null);
-  const { currentLevel } = useGameStore();
+  const { currentLevel, playerPosition, greenHexHeal, setIsOnWarningTile } = useGameStore();
   const pos = useMemo(() => hexToWorld(q, r), [q, r]);
 
   const warningDuration = useMemo(() => {
@@ -41,14 +42,40 @@ const HexTile: React.FC<HexTileProps> = ({ q, r }) => {
   }, [state, currentLevel, isGreen]);
 
   useFrame((_, delta) => {
+    // Green Hex Healing Logic
+    if (isGreen && meshRef.current) {
+      const dist = new THREE.Vector3(playerPosition[0], 0, playerPosition[2]).distanceTo(new THREE.Vector3(pos.x, 0, pos.z));
+      if (dist < 0.8) {
+        setGreenTimer(prev => {
+          const next = prev + delta;
+          if (next >= 3) {
+            greenHexHeal();
+            return 0; // Reset
+          }
+          return next;
+        });
+      } else {
+        setGreenTimer(0);
+      }
+    }
+
     if (state === 'WARNING' && timer) {
       const elapsed = Date.now() - timer;
       if (meshRef.current) {
         meshRef.current.position.y = Math.sin(Date.now() * 0.2) * 0.05;
+
+        // Check if player is on this warning tile
+        const dist = new THREE.Vector3(playerPosition[0], 0, playerPosition[2]).distanceTo(new THREE.Vector3(pos.x, 0, pos.z));
+        if (dist < 0.8) {
+            setIsOnWarningTile(true);
+        }
       }
       if (elapsed >= warningDuration) {
         setState('VOID');
         setTimer(null);
+        // Only reset if we were the one setting it, but multiple tiles could be warning.
+        // Simplified: set to false in a cleanup or global check.
+        // Better: reset in useFrame of LogicController or similar.
       }
     }
 

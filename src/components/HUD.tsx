@@ -20,9 +20,21 @@ const HUD: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-black/50 border border-neon-magenta p-4 text-right">
-          <div className="text-xs text-neon-magenta mb-1">SYNC_VALUE</div>
-          <div className="text-2xl text-white">{syncValue.toLocaleString()}</div>
+        <div className="flex flex-col gap-2">
+            <div className="bg-black/50 border border-neon-magenta p-4 text-right">
+                <div className="text-xs text-neon-magenta mb-1">SYNC_VALUE</div>
+                <div className="text-2xl text-white">{syncValue.toLocaleString()}</div>
+            </div>
+
+            <div className="bg-black/50 border border-neon-yellow p-2 text-right">
+                <div className="text-[10px] text-neon-yellow mb-1">NEXT_FORGE_LEVEL</div>
+                <div className="w-32 h-1 bg-white/10 ml-auto">
+                    <div
+                        className="h-full bg-neon-yellow shadow-[0_0_10px_#FFFF00]"
+                        style={{ width: `${((currentLevel % 5) / 5) * 100}%` }}
+                    />
+                </div>
+            </div>
         </div>
       </div>
 
