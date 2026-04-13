@@ -20,18 +20,15 @@ const VaultEntryOverlay: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (!isConnected) return;
-
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(timer);
-          setTimeout(() => setGameState('PLAYING'), 1000);
           return 100;
         }
         return prev + 2;
       });
-    }, 50);
+    }, 30);
 
     let logIdx = 0;
     const logTimer = setInterval(() => {
@@ -41,68 +38,92 @@ const VaultEntryOverlay: React.FC = () => {
       } else {
         clearInterval(logTimer);
       }
-    }, 500);
+    }, 400);
 
     return () => {
       clearInterval(timer);
       clearInterval(logTimer);
     };
-  }, [isConnected, setGameState]);
+  }, []);
+
+  useEffect(() => {
+      if (progress >= 100 && isConnected) {
+          const timeout = setTimeout(() => setGameState('PLAYING'), 800);
+          return () => clearTimeout(timeout);
+      }
+  }, [progress, isConnected, setGameState]);
 
   return (
-    <div className="fixed inset-0 bg-void-black flex flex-col items-center justify-center crt z-50">
-      {!isConnected ? (
-        <div className="text-center">
-            <h2 className="text-2xl mb-8 animate-pulse font-mono tracking-widest text-neon-cyan">
-                {">"} WAITING FOR PILOT AUTHENTICATION...
-            </h2>
-            <button
-                onClick={() => connect({ connector: injected() })}
-                className="px-8 py-3 border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/20 transition-all"
-            >
-                CONNECT_WALLET
-            </button>
-        </div>
-      ) : (
-        <>
-            <div className="absolute left-10 top-1/2 -translate-y-1/2 font-mono text-neon-cyan opacity-80 max-w-md">
-                <div className="text-xs mb-4 text-neon-magenta">{">"} SIGNATURE_VERIFIED: {address}</div>
+    <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center z-[100] font-mono overflow-hidden">
+      {/* Scanline Effect */}
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,4px_100%] opacity-50" />
+
+      <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-10">
+        <div className="w-full flex justify-between items-start mb-20">
+            <div className="text-neon-cyan opacity-80 text-sm space-y-1">
                 {logs.map((log, i) => (
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    key={i}
-                    className="mb-2"
-                >
-                    {log}
-                </motion.div>
+                    <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        key={i}
+                    >
+                        {log}
+                    </motion.div>
                 ))}
             </div>
-
-            <div className="flex flex-col items-center">
-                <div className="relative w-48 h-48 mb-8">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                    className="w-full h-full border-2 border-neon-cyan border-dashed rounded-full shadow-[0_0_15px_#00FFFF]"
-                />
-                <div className="absolute inset-0 flex items-center justify-center text-4xl font-mono text-neon-cyan">
-                    {progress}%
+            {isConnected && (
+                <div className="text-right">
+                    <div className="text-[10px] text-neon-magenta mb-1">SIGNATURE_VERIFIED</div>
+                    <div className="text-xs text-white opacity-50">{address?.slice(0, 6)}...{address?.slice(-4)}</div>
                 </div>
-                </div>
+            )}
+        </div>
 
-                <div className="w-64 h-2 bg-void-purple rounded-full overflow-hidden border border-neon-cyan/20">
+        <div className="relative w-64 h-64 flex items-center justify-center mb-10">
+            <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+                className="absolute inset-0 border border-neon-cyan/20 rounded-full"
+            />
+            <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+                className="absolute inset-4 border border-neon-magenta/10 rounded-full border-dashed"
+            />
+            <div className="text-6xl font-bold text-neon-cyan tracking-tighter">
+                {progress}<span className="text-xl opacity-50">%</span>
+            </div>
+        </div>
+
+        <div className="w-full space-y-8 flex flex-col items-center">
+            <div className="w-full h-1 bg-white/5 relative overflow-hidden">
                 <motion.div
-                    className="h-full bg-neon-cyan shadow-[0_0_10px_#00FFFF]"
+                    className="absolute inset-y-0 left-0 bg-neon-cyan shadow-[0_0_15px_#00FFFF]"
                     animate={{ width: `${progress}%` }}
                 />
-                </div>
-                <div className="mt-4 font-mono text-neon-cyan animate-pulse tracking-widest">
-                SYSTEM_STABILITY: OPTIMAL
-                </div>
             </div>
-        </>
-      )}
+
+            <div className="h-12 flex items-center justify-center">
+                {!isConnected ? (
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="text-[10px] tracking-[0.4em] text-neon-magenta animate-pulse">
+                            WAITING_FOR_PILOT_AUTH
+                        </div>
+                        <button
+                            onClick={() => connect({ connector: injected() })}
+                            className="px-10 py-2 border border-neon-cyan text-neon-cyan text-xs hover:bg-neon-cyan hover:text-black transition-all cursor-pointer pointer-events-auto"
+                        >
+                            INITIALIZE_NEURAL_LINK
+                        </button>
+                    </div>
+                ) : (
+                    <div className="text-[10px] tracking-[0.5em] text-neon-cyan animate-pulse">
+                        {progress < 100 ? "SYNCING_DATA_STREAMS..." : "BREACH_INITIALIZED"}
+                    </div>
+                )}
+            </div>
+        </div>
+      </div>
     </div>
   );
 };

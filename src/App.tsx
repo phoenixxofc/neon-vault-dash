@@ -1,11 +1,13 @@
 import { Suspense, useCallback, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { Stars } from '@react-three/drei';
 import { Bloom, EffectComposer, ChromaticAberration, Glitch } from '@react-three/postprocessing';
 import { useGameStore } from './store/useGameStore';
 import * as THREE from 'three';
 import Arena from './game/Arena';
 import Player from './game/Player';
+import GhostPlayer from './game/GhostPlayer';
+import EntityManager from './game/EntityManager';
 import CollisionManager from './game/CollisionManager';
 import HUD from './components/HUD';
 import VaultEntryOverlay from './components/VaultEntryOverlay';
@@ -13,7 +15,7 @@ import ForgeMenu from './components/ForgeMenu';
 import { Web3Provider } from './components/Web3Provider';
 
 function App() {
-  const { gameState, setGameState, playerIntegrity, syncValue } = useGameStore();
+  const { gameState, setGameState, playerIntegrity, syncValue, tickIntegrityDecay } = useGameStore();
 
   const startRun = useCallback(async () => {
     try {
@@ -63,11 +65,14 @@ function App() {
               {gameState === 'PLAYING' ? (
                 <>
                   <Player ref={playerRef as React.RefObject<THREE.Group>} />
+                  <GhostPlayer />
+                  <EntityManager />
                   <CollisionManager playerRef={playerRef as React.RefObject<THREE.Group>} />
                 </>
               ) : <></>}
 
               <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+              <LogicController tickIntegrityDecay={tickIntegrityDecay} />
             </Suspense>
 
             <EffectComposer>
@@ -84,6 +89,16 @@ function App() {
       </div>
     </Web3Provider>
   );
+}
+
+function LogicController({ tickIntegrityDecay }: { tickIntegrityDecay: (d: number) => void }) {
+    const setIsOnWarningTile = useGameStore(state => state.setIsOnWarningTile);
+    useFrame((_, delta) => {
+        // Reset warning tile state each frame, HexTiles will set it to true if player is on one.
+        setIsOnWarningTile(false);
+        tickIntegrityDecay(delta);
+    });
+    return null;
 }
 
 export default App;
