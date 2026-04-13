@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useImperativeHandle, useState, useEffect } from 'react';
+import { useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store/useGameStore';
@@ -11,14 +11,15 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
   const velocity = useRef(new THREE.Vector3());
   const chargeStartTime = useRef<number | null>(null);
   const isCharging = useRef(false);
-  const [useGamepad, setUseGamepad] = useState(false);
 
   const { mouse, raycaster, camera } = useThree();
 
-  const { damagePlayer, trailColor, calculateSync } = useGameStore((state) => ({
+  const { damagePlayer, trailColor, calculateSync, useGamepad, setUseGamepad } = useGameStore((state) => ({
     damagePlayer: state.damagePlayer,
     trailColor: state.equippedParts.trail,
-    calculateSync: state.calculateSync
+    calculateSync: state.calculateSync,
+    useGamepad: state.useGamepad,
+    setUseGamepad: state.setUseGamepad
   }));
 
   useImperativeHandle(ref, () => meshRef.current!);
@@ -112,7 +113,7 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
       };
       const interval = setInterval(checkGamepad, 1000);
       return () => clearInterval(interval);
-  }, []);
+  }, [setUseGamepad]);
 
   return (
     <group ref={meshRef} position={[0, 0.5, 0]}>
