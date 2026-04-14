@@ -13,7 +13,6 @@ import HUD from './components/HUD';
 import VaultEntryOverlay from './components/VaultEntryOverlay';
 import ForgeMenu from './components/ForgeMenu';
 import GameOver from './components/GameOver';
-import { Web3Provider } from './components/Web3Provider';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Html } from '@react-three/drei';
 
@@ -26,7 +25,12 @@ const GameLoadingFallback = () => (
 );
 
 function App() {
-  const { gameState, setGameState, playerIntegrity, syncValue, tickIntegrityDecay, spawnEntities } = useGameStore();
+  const gameState = useGameStore(state => state.gameState);
+  const setGameState = useGameStore(state => state.setGameState);
+  const playerIntegrity = useGameStore(state => state.playerIntegrity);
+  const syncValue = useGameStore(state => state.syncValue);
+  const tickIntegrityDecay = useGameStore(state => state.tickIntegrityDecay);
+  const spawnEntities = useGameStore(state => state.spawnEntities);
 
   useEffect(() => {
     console.log(`[SYSTEM] Game State Transition: ${gameState}`);
@@ -53,8 +57,7 @@ function App() {
   const bloomIntensity = 1.5 + (syncValue / 10000);
 
   return (
-    <Web3Provider>
-      <ErrorBoundary>
+    <ErrorBoundary>
       <div className="w-screen h-screen bg-void-black text-neon-cyan font-mono overflow-hidden">
         {gameState === 'MENU' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black">
@@ -118,18 +121,16 @@ function App() {
           </Canvas>
         </div>
       </div>
-      </ErrorBoundary>
-    </Web3Provider>
+    </ErrorBoundary>
   );
 }
 
 function LogicController({ tickIntegrityDecay }: { tickIntegrityDecay: (d: number) => void }) {
     const setIsOnWarningTile = useGameStore(state => state.setIsOnWarningTile);
     useFrame((_, delta) => {
-        // Reset warning tile state each frame, HexTiles will set it to true if player is on one.
         setIsOnWarningTile(false);
         tickIntegrityDecay(delta);
-    });
+    }, -1); // Negative priority to run after tiles have updated
     return null;
 }
 

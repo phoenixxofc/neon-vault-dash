@@ -68,7 +68,10 @@ const HexTile: React.FC<HexTileProps> = ({ q, r }) => {
         // Check if player is on this warning tile
         const dist = new THREE.Vector3(playerPosition[0], 0, playerPosition[2]).distanceTo(new THREE.Vector3(pos.x, 0, pos.z));
         if (dist < 0.8) {
-            setIsOnWarningTile(true);
+            // Only update if currently false to avoid redundant set calls
+            if (!useGameStore.getState().isOnWarningTile) {
+                setIsOnWarningTile(true);
+            }
         }
       }
       if (elapsed >= warningDuration) {

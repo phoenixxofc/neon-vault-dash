@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { useGameStore } from '../store/useGameStore';
-import { useAccount, useConnect } from 'wagmi';
-import { injected } from 'wagmi/connectors';
 import { motion } from 'framer-motion';
 
 const VaultEntryOverlay: React.FC = () => {
@@ -10,9 +8,6 @@ const VaultEntryOverlay: React.FC = () => {
   const [assetProgress, setAssetProgress] = useState(100); // Default to 100 if no assets trigger manager
   const [logs, setLogs] = useState<string[]>([]);
   const setGameState = useGameStore((state) => state.setGameState);
-
-  const { address, isConnected, status, isConnecting } = useAccount();
-  const { connect, error: connectError } = useConnect();
 
   const logSequence = [
     "> CONNECTING TO NEON_VAULT...",
@@ -70,24 +65,14 @@ const VaultEntryOverlay: React.FC = () => {
 
   useEffect(() => {
       const combinedProgress = Math.min(progress, assetProgress ?? 100);
-      if (combinedProgress >= 100 && isConnected) {
+      if (combinedProgress >= 100) {
           const timeout = setTimeout(() => {
               console.log("[SYSTEM] Entering Vault Arena...");
               setGameState('PLAYING');
           }, 800);
           return () => clearTimeout(timeout);
       }
-  }, [progress, assetProgress, isConnected, setGameState]);
-
-  useEffect(() => {
-      if (connectError) {
-          console.error("[SYSTEM] Wallet Connection Error:", connectError);
-      }
-  }, [connectError]);
-
-  useEffect(() => {
-      console.log(`[SYSTEM] Wallet Status: ${status}`);
-  }, [status]);
+  }, [progress, assetProgress, setGameState]);
 
   return (
     <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center z-[100] font-mono overflow-hidden">
@@ -107,12 +92,6 @@ const VaultEntryOverlay: React.FC = () => {
                     </motion.div>
                 ))}
             </div>
-            {isConnected && (
-                <div className="text-right">
-                    <div className="text-[10px] text-neon-magenta mb-1">SIGNATURE_VERIFIED</div>
-                    <div className="text-xs text-white opacity-50">{address?.slice(0, 6)}...{address?.slice(-4)}</div>
-                </div>
-            )}
         </div>
 
         <div className="relative w-64 h-64 flex items-center justify-center mb-10">
@@ -140,27 +119,9 @@ const VaultEntryOverlay: React.FC = () => {
             </div>
 
             <div className="h-12 flex items-center justify-center">
-                {!isConnected ? (
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="text-[10px] tracking-[0.4em] text-neon-magenta animate-pulse">
-                            {connectError ? 'LINK_FAILURE_RETRY_REQUIRED' : 'WAITING_FOR_PILOT_AUTH'}
-                        </div>
-                        <button
-                            onClick={() => {
-                                console.log("[SYSTEM] User initiated wallet connection");
-                                connect({ connector: injected() });
-                            }}
-                            disabled={isConnecting}
-                            className={`px-10 py-2 border border-neon-cyan text-neon-cyan text-xs hover:bg-neon-cyan hover:text-black transition-all cursor-pointer pointer-events-auto ${isConnecting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            {isConnecting ? 'ESTABLISHING_LINK...' : 'INITIALIZE_NEURAL_LINK'}
-                        </button>
-                    </div>
-                ) : (
-                    <div className="text-[10px] tracking-[0.5em] text-neon-cyan animate-pulse">
-                        {progress < 100 ? "SYNCING_DATA_STREAMS..." : "BREACH_INITIALIZED"}
-                    </div>
-                )}
+                <div className="text-[10px] tracking-[0.5em] text-neon-cyan animate-pulse">
+                    {progress < 100 ? "SYNCING_DATA_STREAMS..." : "BREACH_INITIALIZED"}
+                </div>
             </div>
         </div>
       </div>
