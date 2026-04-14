@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 const VaultEntryOverlay: React.FC = () => {
   const [progress, setProgress] = useState(0);
-  const [assetProgress, setAssetProgress] = useState(0);
+  const [assetProgress, setAssetProgress] = useState(100); // Default to 100 if no assets trigger manager
   const [logs, setLogs] = useState<string[]>([]);
   const setGameState = useGameStore((state) => state.setGameState);
 
@@ -23,6 +23,10 @@ const VaultEntryOverlay: React.FC = () => {
 
   useEffect(() => {
     // THREE.js Asset Loading Manager
+    THREE.DefaultLoadingManager.onStart = () => {
+        setAssetProgress(0);
+    };
+
     THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
         const p = Math.round((itemsLoaded / itemsTotal) * 100);
         setAssetProgress(p);
@@ -65,7 +69,7 @@ const VaultEntryOverlay: React.FC = () => {
   }, []);
 
   useEffect(() => {
-      const combinedProgress = Math.min(progress, assetProgress || 100);
+      const combinedProgress = Math.min(progress, assetProgress ?? 100);
       if (combinedProgress >= 100 && isConnected) {
           const timeout = setTimeout(() => {
               console.log("[SYSTEM] Entering Vault Arena...");
@@ -123,7 +127,7 @@ const VaultEntryOverlay: React.FC = () => {
                 className="absolute inset-4 border border-neon-magenta/10 rounded-full border-dashed"
             />
             <div className="text-6xl font-bold text-neon-cyan tracking-tighter">
-                {Math.min(progress, assetProgress || 100)}<span className="text-xl opacity-50">%</span>
+                {Math.min(progress, assetProgress ?? 100)}<span className="text-xl opacity-50">%</span>
             </div>
         </div>
 
@@ -131,7 +135,7 @@ const VaultEntryOverlay: React.FC = () => {
             <div className="w-full h-1 bg-white/5 relative overflow-hidden">
                 <motion.div
                     className="absolute inset-y-0 left-0 bg-neon-cyan shadow-[0_0_15px_#00FFFF]"
-                    animate={{ width: `${Math.min(progress, assetProgress || 100)}%` }}
+                    animate={{ width: `${Math.min(progress, assetProgress ?? 100)}%` }}
                 />
             </div>
 

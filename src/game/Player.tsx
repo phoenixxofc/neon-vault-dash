@@ -12,6 +12,8 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
   const velocity = useRef(new THREE.Vector3());
   const chargeStartTime = useRef<number | null>(null);
   const isCharging = useRef(false);
+  const dashBuffer = useRef<('STANDARD' | 'SIPHON') | null>(null);
+  const lastDashTime = useRef(0);
 
   const { mouse, raycaster, camera } = useThree();
 
@@ -25,7 +27,8 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
     setPlayerPosition,
     externalForce,
     resetExternalForce,
-    isOnWarningTile
+    isOnWarningTile,
+    isHitStop
   } = useGameStore((state) => ({
     damagePlayer: state.damagePlayer,
     trailColor: state.equippedParts.trail,
@@ -36,7 +39,8 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
     setPlayerPosition: state.setPlayerPosition,
     externalForce: state.externalForce,
     resetExternalForce: state.resetExternalForce,
-    isOnWarningTile: state.isOnWarningTile
+    isOnWarningTile: state.isOnWarningTile,
+    isHitStop: state.isHitStop
   }));
 
   useImperativeHandle(ref, () => meshRef.current!);
@@ -53,6 +57,14 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
 
   const handleDash = (type: 'STANDARD' | 'SIPHON') => {
     if (!meshRef.current) return;
+
+    // Cooldown/Buffering logic
+    const now = Date.now();
+    if (now - lastDashTime.current < 200) {
+        dashBuffer.current = type;
+        return;
+    }
+    lastDashTime.current = now;
 
     const gamepad = navigator.getGamepads()[0];
 
@@ -102,7 +114,14 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
   };
 
   useFrame((_, delta) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || isHitStop) return;
+
+    // Process Buffer
+    if (dashBuffer.current && Date.now() - lastDashTime.current > 200) {
+        const type = dashBuffer.current;
+        dashBuffer.current = null;
+        handleDash(type);
+    }
 
     // Gamepad Logic
     const gamepad = navigator.getGamepads()[0];

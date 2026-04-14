@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -24,6 +24,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public render() {
+    const { children } = this.props;
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-black text-neon-red p-10 font-mono z-[1000]">
@@ -41,7 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.children;
+    return children;
   }
 }
 

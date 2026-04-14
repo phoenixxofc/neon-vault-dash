@@ -12,23 +12,31 @@ import CollisionManager from './game/CollisionManager';
 import HUD from './components/HUD';
 import VaultEntryOverlay from './components/VaultEntryOverlay';
 import ForgeMenu from './components/ForgeMenu';
+import GameOver from './components/GameOver';
 import { Web3Provider } from './components/Web3Provider';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Html } from '@react-three/drei';
 
 const GameLoadingFallback = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-black text-neon-cyan font-mono">
-        <div className="animate-pulse">INITIALIZING_WORLD_DATA...</div>
-    </div>
+    <Html center>
+        <div className="bg-black/80 text-neon-cyan font-mono p-4 border border-neon-cyan whitespace-nowrap animate-pulse">
+            INITIALIZING_WORLD_DATA...
+        </div>
+    </Html>
 );
 
 function App() {
-  const { gameState, setGameState, playerIntegrity, syncValue, tickIntegrityDecay } = useGameStore();
+  const { gameState, setGameState, playerIntegrity, syncValue, tickIntegrityDecay, spawnEntities } = useGameStore();
 
   useEffect(() => {
     console.log(`[SYSTEM] Game State Transition: ${gameState}`);
     // Expose for debugging
     (window as any).gameState = gameState;
-  }, [gameState]);
+
+    if (gameState === 'PLAYING') {
+        spawnEntities(1);
+    }
+  }, [gameState, spawnEntities]);
 
   const startRun = useCallback(async () => {
     try {
@@ -67,6 +75,7 @@ function App() {
 
         {gameState === 'LOADING' ? <VaultEntryOverlay /> : <></>}
         {gameState === 'FORGE' ? <ForgeMenu /> : <></>}
+        {gameState === 'GAMEOVER' ? <GameOver /> : <></>}
         {(gameState === 'PLAYING' || gameState === 'FORGE') ? <HUD /> : <></>}
 
         <div className="w-full h-full relative" style={{ minHeight: '100vh', width: '100vw' }}>
@@ -97,17 +106,15 @@ function App() {
               <LogicController tickIntegrityDecay={tickIntegrityDecay} />
             </Suspense>
 
-            <ErrorBoundary>
-              <EffectComposer multisampling={0} disableNormalPass>
-                <Bloom luminanceThreshold={0.5} intensity={bloomIntensity} />
-                {playerIntegrity < 30 ? (
-                    <ChromaticAberration offset={new THREE.Vector2(0.005, 0.005)} />
-                ) : <></>}
-                {playerIntegrity < 15 ? (
-                    <Glitch delay={new THREE.Vector2(1, 4)} duration={new THREE.Vector2(0.1, 0.3)} strength={new THREE.Vector2(0.1, 0.5)} />
-                ) : <></>}
-              </EffectComposer>
-            </ErrorBoundary>
+            <EffectComposer multisampling={0} enableNormalPass={false}>
+              <Bloom luminanceThreshold={0.5} intensity={bloomIntensity} />
+              {playerIntegrity < 30 ? (
+                  <ChromaticAberration offset={new THREE.Vector2(0.005, 0.005)} />
+              ) : <></>}
+              {playerIntegrity < 15 ? (
+                  <Glitch delay={new THREE.Vector2(1, 4)} duration={new THREE.Vector2(0.1, 0.3)} strength={new THREE.Vector2(0.1, 0.5)} />
+              ) : <></>}
+            </EffectComposer>
           </Canvas>
         </div>
       </div>

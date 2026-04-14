@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store/useGameStore';
 import { hexToWorld } from '../utils/hexGrid';
+import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 
 export type TileState = 'STABLE' | 'WARNING' | 'VOID';
@@ -100,20 +101,30 @@ const HexTile: React.FC<HexTileProps> = ({ q, r }) => {
   };
 
   return (
-    <mesh
-      ref={meshRef}
-      position={pos}
-      rotation={[-Math.PI / 2, 0, 0]}
-    >
-      <cylinderGeometry args={[0.95, 0.95, 0.1, 6]} />
-      <meshStandardMaterial
-        color={getColor()}
-        emissive={getColor()}
-        emissiveIntensity={state === 'WARNING' ? 2 : isGreen ? 1 : 0}
-        transparent={state === 'VOID'}
-        opacity={state === 'VOID' ? 0.5 : 1}
-      />
-    </mesh>
+    <group position={pos}>
+        <mesh
+            ref={meshRef}
+            rotation={[-Math.PI / 2, 0, 0]}
+        >
+            <cylinderGeometry args={[0.95, 0.95, 0.1, 6]} />
+            <meshStandardMaterial
+                color={getColor()}
+                emissive={getColor()}
+                emissiveIntensity={state === 'WARNING' ? 2 : isGreen ? 1 : 0}
+                transparent={state === 'VOID'}
+                opacity={state === 'VOID' ? 0.5 : 1}
+            />
+        </mesh>
+        {state === 'VOID' && (
+            <Sparkles
+                count={20}
+                scale={1}
+                size={2}
+                speed={0.5}
+                color={currentLevel >= 30 ? "#FF0000" : "#FFFF00"}
+            />
+        )}
+    </group>
   );
 };
 
