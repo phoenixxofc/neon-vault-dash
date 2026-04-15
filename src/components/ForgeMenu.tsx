@@ -34,8 +34,8 @@ const ForgeMenu: React.FC = () => {
             className="group border border-neon-teal p-4 hover:bg-neon-teal/20 transition-all text-left"
           >
             <div className="text-neon-teal text-sm font-mono">OPTION_C</div>
-            <div className="text-white text-xl">EXTRACT_DATA</div>
-            <div className="text-neon-teal/60 text-xs mt-1 italic">Mint collected $SHARD and end run.</div>
+            <div className="text-white text-xl">EXIT_RUN</div>
+            <div className="text-neon-teal/60 text-xs mt-1 italic">Save shards and end run.</div>
           </button>
         </div>
       </div>
