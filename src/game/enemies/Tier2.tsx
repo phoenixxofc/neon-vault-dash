@@ -12,12 +12,12 @@ interface EnemyProps {
 export const EchoHunter: React.FC<EnemyProps> = () => {
   const meshRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3());
-  const { playerPosition } = useGameStore();
-  const lastPlayerPos = useRef(new THREE.Vector3(...playerPosition));
+  const lastPlayerPos = useRef(new THREE.Vector3());
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
-    const currentPlayerPos = new THREE.Vector3(...playerPosition);
+    const playerPos = useGameStore.getState().playerPosition;
+    const currentPlayerPos = new THREE.Vector3(...playerPos);
     if (currentPlayerPos.distanceTo(lastPlayerPos.current) > 1.0) {
         // Player dashed
         const worldPos = new THREE.Vector3();
@@ -44,7 +44,6 @@ export const Tether: React.FC<{ posA: [number, number], posB: [number, number] }
   const meshARef = useRef<THREE.Group>(null);
   const meshBRef = useRef<THREE.Group>(null);
   const beamRef = useRef<THREE.Mesh>(null);
-  const { playerPosition, damagePlayer } = useGameStore();
 
   const worldA = useMemo(() => hexToWorld(posA[0], posA[1]), [posA]);
   const worldB = useMemo(() => hexToWorld(posB[0], posB[1]), [posB]);
@@ -65,12 +64,13 @@ export const Tether: React.FC<{ posA: [number, number], posB: [number, number] }
       beamRef.current.scale.z = posA_curr.distanceTo(posB_curr);
 
       // Simple line-segment distance check for player
-      const p = new THREE.Vector3(...playerPosition);
+      const state = useGameStore.getState();
+      const p = new THREE.Vector3(...state.playerPosition);
       const line = new THREE.Line3(posA_curr, posB_curr);
       const closestPoint = new THREE.Vector3();
       line.closestPointToPoint(p, true, closestPoint);
       if (p.distanceTo(closestPoint) < 0.4) {
-          damagePlayer(1); // Continuous damage
+          state.damagePlayer(1); // Continuous damage
       }
     }
   });
@@ -92,10 +92,43 @@ export const Tether: React.FC<{ posA: [number, number], posB: [number, number] }
 };
 
 export const MineLayer: React.FC<EnemyProps> = () => {
+  const [mines, setMines] = React.useState<{ id: number, pos: [number, number, number], exploded: boolean }[]>([]);
+  const lastMine = useRef(0);
+
+  useFrame((state) => {
+    const now = state.clock.getElapsedTime();
+    if (now - lastMine.current > 4) {
+      lastMine.current = now;
+      const pPos = useGameStore.getState().playerPosition;
+      setMines(prev => [...prev, { id: Date.now(), pos: [...pPos], exploded: false }]);
+    }
+
+    // Explode logic
+    mines.forEach(mine => {
+        if (!mine.exploded) {
+            const pPos = useGameStore.getState().playerPosition;
+            const dist = new THREE.Vector3(...mine.pos).distanceTo(new THREE.Vector3(...pPos));
+            if (dist < 0.6) {
+                useGameStore.getState().damagePlayer(15);
+                mine.exploded = true;
+                setMines(prev => prev.map(m => m.id === mine.id ? { ...m, exploded: true } : m));
+            }
+        }
+    });
+  });
+
   return (
-    <mesh position={[0, -0.4, 0]}>
-      <cylinderGeometry args={[0.5, 0.5, 0.05, 6]} />
-      <meshStandardMaterial color="#FF4500" transparent opacity={0.5} />
-    </mesh>
+    <group>
+      <mesh position={[0, 0, 0]}>
+        <cylinderGeometry args={[0.4, 0.4, 0.8, 6]} />
+        <meshStandardMaterial color="#FF4500" emissive="#FF4500" />
+      </mesh>
+      {mines.map(mine => !mine.exploded && (
+          <mesh key={mine.id} position={[mine.pos[0] - 0, 0.1, mine.pos[2] - 0]}>
+              <sphereGeometry args={[0.2]} />
+              <meshStandardMaterial color="#FF0000" emissive="#FF0000" emissiveIntensity={2} />
+          </mesh>
+      ))}
+    </group>
   );
 };

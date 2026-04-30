@@ -38,7 +38,7 @@ function App() {
     (window as any).gameState = gameState;
 
     if (gameState === 'PLAYING') {
-        spawnEntities(1);
+        spawnEntities(useGameStore.getState().currentLevel);
     }
   }, [gameState, spawnEntities]);
 
@@ -55,6 +55,16 @@ function App() {
 
   const playerRef = useRef<THREE.Group>(null);
   const bloomIntensity = 1.5 + (syncValue / 10000);
+
+  const shake = useRef(0);
+  useEffect(() => {
+      const unsub = useGameStore.subscribe((state, prevState) => {
+          if (state.playerIntegrity < prevState.playerIntegrity) {
+              shake.current = 5;
+          }
+      });
+      return unsub;
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -95,6 +105,14 @@ function App() {
             <fog attach="fog" args={['#050505', 10, 50]} />
 
             <Suspense fallback={<GameLoadingFallback />}>
+              <group onUpdate={(self) => {
+                  if (shake.current > 0) {
+                      self.position.set(Math.random() * 0.1, Math.random() * 0.1, Math.random() * 0.1);
+                      shake.current -= 0.5;
+                  } else {
+                      self.position.set(0, 0, 0);
+                  }
+              }}>
               <Arena />
               {gameState === 'PLAYING' ? (
                 <>
@@ -107,6 +125,7 @@ function App() {
 
               <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
               <LogicController tickIntegrityDecay={tickIntegrityDecay} />
+              </group>
             </Suspense>
 
             <EffectComposer multisampling={0} enableNormalPass={false}>

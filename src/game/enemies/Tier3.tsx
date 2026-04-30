@@ -11,12 +11,12 @@ interface EnemyProps {
 export const PhaseShifter: React.FC<EnemyProps> = () => {
   const meshRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
-  const { playerPosition } = useGameStore();
-  const lastPlayerPos = useRef(new THREE.Vector3(...playerPosition));
+  const lastPlayerPos = useRef(new THREE.Vector3());
 
   useFrame(() => {
     if (!meshRef.current || !materialRef.current) return;
-    const currentPlayerPos = new THREE.Vector3(...playerPosition);
+    const playerPos = useGameStore.getState().playerPosition;
+    const currentPlayerPos = new THREE.Vector3(...playerPos);
     const isMoving = currentPlayerPos.distanceTo(lastPlayerPos.current) > 0.01;
 
     materialRef.current.opacity = THREE.MathUtils.lerp(materialRef.current.opacity, isMoving ? 0.1 : 1.0, 0.1);
@@ -37,11 +37,11 @@ export const PhaseShifter: React.FC<EnemyProps> = () => {
 
 export const GravitySentinel: React.FC<EnemyProps> = () => {
   const meshRef = useRef<THREE.Group>(null);
-  const { playerPosition, applyExternalForce } = useGameStore();
 
   useFrame(() => {
       if (!meshRef.current) return;
-      const p = new THREE.Vector3(...playerPosition);
+      const state = useGameStore.getState();
+      const p = new THREE.Vector3(...state.playerPosition);
       const s = new THREE.Vector3();
       meshRef.current.getWorldPosition(s);
       const dist = p.distanceTo(s);
@@ -50,7 +50,7 @@ export const GravitySentinel: React.FC<EnemyProps> = () => {
           const toPlayer = new THREE.Vector3().subVectors(p, s).normalize();
           const perp = new THREE.Vector3(-toPlayer.z, 0, toPlayer.x);
           const force = perp.multiplyScalar(0.5 * (1 - dist/3.0));
-          applyExternalForce([force.x, force.y, force.z]);
+          state.applyExternalForce([force.x, force.y, force.z]);
       }
   });
 
@@ -70,14 +70,11 @@ export const GravitySentinel: React.FC<EnemyProps> = () => {
 
 export const MirrorDrone: React.FC<EnemyProps> = () => {
   const meshRef = useRef<THREE.Group>(null);
-  const { playerPosition } = useGameStore();
 
   useFrame(() => {
     if (!meshRef.current) return;
-    // Mirror player movement across its own local origin relative to parent entity
-    // Actually, MirrorDrone usually mirrors across the arena center.
-    // If it's placed at some x,z, it should probably override its position.
-    meshRef.current.position.set(-playerPosition[0], 0, -playerPosition[2]);
+    const playerPos = useGameStore.getState().playerPosition;
+    meshRef.current.position.set(-playerPos[0], 0, -playerPos[2]);
   });
 
   return (

@@ -30,7 +30,13 @@ const EntityManager: React.FC = () => {
           case 'ENEMY_T1':
             return (
                 <group key={entity.id} position={[x, y, z]}>
-                    {seed % 3 === 0 ? <StaticSentry q={0} r={0} /> : seed % 3 === 1 ? <Orbiter q={0} r={0} radius={2} /> : <Sweeper q={0} r={0} />}
+                    {seed % 3 === 0 ? (
+                        <StaticSentry q={0} r={0} id={entity.id} />
+                    ) : seed % 3 === 1 ? (
+                        <Orbiter q={0} r={0} radius={2} id={entity.id} />
+                    ) : (
+                        <Sweeper q={0} r={0} id={entity.id} />
+                    )}
                 </group>
             );
 
