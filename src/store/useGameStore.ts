@@ -26,6 +26,7 @@ interface GameState {
   useGamepad: boolean;
   isSiphonDashing: boolean;
   isOnWarningTile: boolean;
+  isHitStop: boolean;
   playerPosition: [number, number, number];
   externalForce: [number, number, number];
 
@@ -70,6 +71,7 @@ export const useGameStore = create<GameState>((set) => ({
   useGamepad: false,
   isSiphonDashing: false,
   isOnWarningTile: false,
+  isHitStop: false,
   playerPosition: [0, 0.5, 0],
   externalForce: [0, 0, 0],
 
@@ -77,12 +79,18 @@ export const useGameStore = create<GameState>((set) => ({
 
   damagePlayer: (amount) => set((state) => {
     const newIntegrity = Math.max(0, state.playerIntegrity - amount);
-    // Also decrement durability as per req
     const newDurability = Math.max(0, state.equippedParts.durability - 1);
+
+    // Trigger Hit-Stop
+    setTimeout(() => {
+        set({ isHitStop: false });
+    }, 100);
+
     return {
       playerIntegrity: newIntegrity,
       gameState: newIntegrity <= 0 ? 'GAMEOVER' : state.gameState,
-      equippedParts: { ...state.equippedParts, durability: newDurability }
+      equippedParts: { ...state.equippedParts, durability: newDurability },
+      isHitStop: true
     };
   }),
 

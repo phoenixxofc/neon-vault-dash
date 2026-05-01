@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Trail, Float } from '@react-three/drei';
 import { useGameStore } from '../store/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { worldToHex, hexToWorld } from '../utils/hexGrid';
 import MK3KineticRig from '../components/Locker';
 
@@ -12,6 +13,8 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
   const velocity = useRef(new THREE.Vector3());
   const chargeStartTime = useRef<number | null>(null);
   const isCharging = useRef(false);
+  const dashBuffer = useRef<('STANDARD' | 'SIPHON') | null>(null);
+  const lastDashTime = useRef(0);
 
   const { mouse, raycaster, camera } = useThree();
 
@@ -25,8 +28,9 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
     setPlayerPosition,
     externalForce,
     resetExternalForce,
-    isOnWarningTile
-  } = useGameStore((state) => ({
+    isOnWarningTile,
+    isHitStop
+  } = useGameStore(useShallow((state) => ({
     damagePlayer: state.damagePlayer,
     trailColor: state.equippedParts.trail,
     calculateSync: state.calculateSync,
@@ -36,16 +40,17 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
     setPlayerPosition: state.setPlayerPosition,
     externalForce: state.externalForce,
     resetExternalForce: state.resetExternalForce,
-    isOnWarningTile: state.isOnWarningTile
-  }));
+    isOnWarningTile: state.isOnWarningTile,
+    isHitStop: state.isHitStop
+  })));
 
   useImperativeHandle(ref, () => meshRef.current!);
 
   const FRICTION = 0.95;
-  const { thrusters, durability } = useGameStore(state => ({
+  const { thrusters, durability } = useGameStore(useShallow(state => ({
       thrusters: state.equippedParts.thrusters,
       durability: state.equippedParts.durability
-  }));
+  })));
 
   const BASE_DASH_FORCE = 0.8 + (thrusters === 'MK3_ULTRA' ? 0.2 : 0);
   const MAX_DASH_FORCE = 2.5 + (thrusters === 'MK3_ULTRA' ? 0.5 : 0);
@@ -53,6 +58,14 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
 
   const handleDash = (type: 'STANDARD' | 'SIPHON') => {
     if (!meshRef.current) return;
+
+    // Cooldown/Buffering logic
+    const now = Date.now();
+    if (now - lastDashTime.current < 200) {
+        dashBuffer.current = type;
+        return;
+    }
+    lastDashTime.current = now;
 
     const gamepad = navigator.getGamepads()[0];
 
@@ -102,7 +115,14 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
   };
 
   useFrame((_, delta) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || isHitStop) return;
+
+    // Process Buffer
+    if (dashBuffer.current && Date.now() - lastDashTime.current > 200) {
+        const type = dashBuffer.current;
+        dashBuffer.current = null;
+        handleDash(type);
+    }
 
     // Gamepad Logic
     const gamepad = navigator.getGamepads()[0];
@@ -143,7 +163,15 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
     }
 
     meshRef.current.position.add(velocity.current.clone().multiplyScalar(delta * 60));
-    setPlayerPosition([meshRef.current.position.x, meshRef.current.position.y, meshRef.current.position.z]);
+    const newPos: [number, number, number] = [meshRef.current.position.x, meshRef.current.position.y, meshRef.current.position.z];
+
+    // Only update store if position changed significantly
+    const lastPos = useGameStore.getState().playerPosition;
+    const distSq = (newPos[0]-lastPos[0])**2 + (newPos[1]-lastPos[1])**2 + (newPos[2]-lastPos[2])**2;
+    if (distSq > 0.01) {
+        setPlayerPosition(newPos);
+    }
+
     velocity.current.multiplyScalar(FRICTION);
 
     if (!useGamepad) {

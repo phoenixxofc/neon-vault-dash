@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameStore, type Entity } from '../store/useGameStore';
 import { StaticSentry, Orbiter, Sweeper } from './enemies/Tier1';
-import { EchoHunter, MineLayer } from './enemies/Tier2';
+import { EchoHunter, MineLayer, Tether } from './enemies/Tier2';
 import { PhaseShifter, GravitySentinel, MirrorDrone } from './enemies/Tier3';
 
 const Shard: React.FC<{ position: [number, number, number] }> = ({ position }) => (
@@ -30,14 +30,26 @@ const EntityManager: React.FC = () => {
           case 'ENEMY_T1':
             return (
                 <group key={entity.id} position={[x, y, z]}>
-                    {seed % 3 === 0 ? <StaticSentry q={0} r={0} /> : seed % 3 === 1 ? <Orbiter q={0} r={0} radius={2} /> : <Sweeper q={0} r={0} />}
+                    {seed % 3 === 0 ? (
+                        <StaticSentry q={0} r={0} id={entity.id} />
+                    ) : seed % 3 === 1 ? (
+                        <Orbiter q={0} r={0} radius={2} id={entity.id} />
+                    ) : (
+                        <Sweeper q={0} r={0} id={entity.id} />
+                    )}
                 </group>
             );
 
           case 'ENEMY_T2':
             return (
                 <group key={entity.id} position={[x, y, z]}>
-                    {seed % 2 === 0 ? <EchoHunter q={0} r={0} /> : <MineLayer q={0} r={0} />}
+                    {seed % 3 === 0 ? (
+                        <EchoHunter q={0} r={0} />
+                    ) : seed % 3 === 1 ? (
+                        <MineLayer q={0} r={0} />
+                    ) : (
+                        <Tether posA={[-1, -1]} posB={[1, 1]} />
+                    )}
                 </group>
             );
 

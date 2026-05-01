@@ -3,40 +3,36 @@ import { useGameStore, type Entity } from '../store/useGameStore';
 import * as THREE from 'three';
 
 const CollisionManager: React.FC<{ playerRef: React.RefObject<THREE.Group> }> = ({ playerRef }) => {
-  const {
-    damagePlayer,
-    addShards,
-    entities,
-    collectEntity,
-    gameState,
-    calculateSync,
-    isSiphonDashing,
-    siphonHeal
-  } = useGameStore();
-
   useFrame(() => {
-    if (!playerRef.current || gameState !== 'PLAYING') return;
+    const state = useGameStore.getState();
+    if (!playerRef.current || state.gameState !== 'PLAYING') return;
 
     const playerPos = playerRef.current.position;
     const playerHitboxRadius = 0.4;
 
-    entities.forEach((entity: Entity) => {
+    state.entities.forEach((entity: Entity) => {
       const entityPos = new THREE.Vector3(...entity.position);
       const distance = playerPos.distanceTo(entityPos);
 
       if (distance < playerHitboxRadius + 0.3) {
         if (entity.type === 'SHARD') {
-          addShards(1);
-          collectEntity(entity.id);
-          calculateSync();
-        } else if (entity.type.startsWith('ENEMY')) {
-          if (isSiphonDashing && entity.type === 'ENEMY_T1') {
-            siphonHeal();
-          } else {
-            damagePlayer(10);
+          state.addShards(1);
+          state.collectEntity(entity.id);
+          state.calculateSync();
+
+          // Check if level clear
+          const remainingShards = state.entities.filter(e => e.type === 'SHARD' && e.id !== entity.id).length;
+          if (remainingShards === 0) {
+              state.completeLevel();
           }
-          collectEntity(entity.id);
-          calculateSync();
+        } else if (entity.type.startsWith('ENEMY')) {
+          if (state.isSiphonDashing && entity.type === 'ENEMY_T1') {
+            state.siphonHeal();
+          } else {
+            state.damagePlayer(10);
+          }
+          state.collectEntity(entity.id);
+          state.calculateSync();
         }
       }
     });
