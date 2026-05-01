@@ -6,9 +6,10 @@ import { useGameStore } from '../../store/useGameStore';
 interface EnemyProps {
   q: number;
   r: number;
+  id: string;
 }
 
-export const PhaseShifter: React.FC<EnemyProps> = () => {
+export const PhaseShifter: React.FC<EnemyProps> = ({ id }) => {
   const meshRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const lastPlayerPos = useRef(new THREE.Vector3());
@@ -35,7 +36,7 @@ export const PhaseShifter: React.FC<EnemyProps> = () => {
   );
 };
 
-export const GravitySentinel: React.FC<EnemyProps> = () => {
+export const GravitySentinel: React.FC<EnemyProps> = ({ id }) => {
   const meshRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
@@ -68,7 +69,7 @@ export const GravitySentinel: React.FC<EnemyProps> = () => {
   );
 };
 
-export const MirrorDrone: React.FC<EnemyProps> = () => {
+export const MirrorDrone: React.FC<EnemyProps> = ({ id }) => {
   const meshRef = useRef<THREE.Group>(null);
 
   useFrame(() => {

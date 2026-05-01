@@ -44,9 +44,9 @@ const EntityManager: React.FC = () => {
             return (
                 <group key={entity.id} position={[x, y, z]}>
                     {seed % 3 === 0 ? (
-                        <EchoHunter q={0} r={0} />
+                        <EchoHunter q={0} r={0} id={entity.id} />
                     ) : seed % 3 === 1 ? (
-                        <MineLayer q={0} r={0} />
+                        <MineLayer q={0} r={0} id={entity.id} />
                     ) : (
                         <Tether posA={[-1, -1]} posB={[1, 1]} />
                     )}
@@ -56,7 +56,13 @@ const EntityManager: React.FC = () => {
           case 'ENEMY_T3':
             return (
                 <group key={entity.id} position={[x, y, z]}>
-                    {seed % 3 === 0 ? <PhaseShifter q={0} r={0} /> : seed % 3 === 1 ? <GravitySentinel q={0} r={0} /> : <MirrorDrone q={0} r={0} />}
+                    {seed % 3 === 0 ? (
+                        <PhaseShifter q={0} r={0} id={entity.id} />
+                    ) : seed % 3 === 1 ? (
+                        <GravitySentinel q={0} r={0} id={entity.id} />
+                    ) : (
+                        <MirrorDrone q={0} r={0} id={entity.id} />
+                    )}
                 </group>
             );
 

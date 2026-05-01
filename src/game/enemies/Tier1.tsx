@@ -1,13 +1,15 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useGameStore } from '../../store/useGameStore';
 
 interface EnemyProps {
   q: number;
   r: number;
+  id: string;
 }
 
-export const StaticSentry: React.FC<EnemyProps> = () => {
+export const StaticSentry: React.FC<EnemyProps> = ({ id }) => {
   const meshRef = useRef<THREE.Group>(null);
   const projectileRef = useRef<THREE.Mesh>(null);
   const lastFire = useRef(0);

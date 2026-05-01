@@ -7,9 +7,10 @@ import { useGameStore } from '../../store/useGameStore';
 interface EnemyProps {
   q: number;
   r: number;
+  id: string;
 }
 
-export const EchoHunter: React.FC<EnemyProps> = () => {
+export const EchoHunter: React.FC<EnemyProps> = ({ id }) => {
   const meshRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3());
   const lastPlayerPos = useRef(new THREE.Vector3());
@@ -91,7 +92,7 @@ export const Tether: React.FC<{ posA: [number, number], posB: [number, number] }
   );
 };
 
-export const MineLayer: React.FC<EnemyProps> = () => {
+export const MineLayer: React.FC<EnemyProps> = ({ id }) => {
   const [mines, setMines] = React.useState<{ id: number, pos: [number, number, number], exploded: boolean }[]>([]);
   const lastMine = useRef(0);
 
