@@ -20,17 +20,24 @@ const Arena: React.FC = () => {
     return tileList;
   }, [currentLevel]);
 
+  // Visual light color theme changes per level
+  const lightColor = useMemo(() => {
+    const colors = ['#00FFFF', '#FF00FF', '#00FF88', '#FF9900', '#FF0055', '#9900FF'];
+    return colors[(currentLevel - 1) % colors.length];
+  }, [currentLevel]);
+
   return (
     <group>
       {tiles.map((tile) => (
         <HexTile
-          key={getHexKey(tile.q, tile.r)}
+          key={`${currentLevel}-${getHexKey(tile.q, tile.r)}`}
           q={tile.q}
           r={tile.r}
         />
       ))}
-      <ambientLight intensity={0.2} />
-      <pointLight position={[10, 10, 10]} intensity={1} color="#00FFFF" />
+      <ambientLight intensity={0.3} />
+      <pointLight position={[10, 12, 10]} intensity={2} color={lightColor} />
+      <pointLight position={[-10, 8, -10]} intensity={1} color="#FF00FF" />
     </group>
   );
 };

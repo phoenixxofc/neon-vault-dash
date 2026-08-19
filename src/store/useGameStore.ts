@@ -108,10 +108,14 @@ export const useGameStore = create<GameState>((set) => ({
     totalShards: state.totalShards + amount
   })),
 
-  completeLevel: () => set((state) => ({
-    currentLevel: state.currentLevel + 1,
-    gameState: (state.currentLevel + 1) % 5 === 0 ? 'FORGE' : 'PLAYING'
-  })),
+  completeLevel: () => set((state) => {
+    const nextLevel = state.currentLevel + 1;
+    const nextGameState = nextLevel % 5 === 0 ? 'FORGE' : 'PLAYING';
+    return {
+      currentLevel: nextLevel,
+      gameState: nextGameState
+    };
+  }),
 
   calculateSync: (isWarningDash = false) => set((state) => {
     const L = state.currentLevel;

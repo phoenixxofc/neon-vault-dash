@@ -26,6 +26,7 @@ const GameLoadingFallback = () => (
 
 function App() {
   const gameState = useGameStore(state => state.gameState);
+  const currentLevel = useGameStore(state => state.currentLevel);
   const setGameState = useGameStore(state => state.setGameState);
   const playerIntegrity = useGameStore(state => state.playerIntegrity);
   const syncValue = useGameStore(state => state.syncValue);
@@ -33,14 +34,14 @@ function App() {
   const spawnEntities = useGameStore(state => state.spawnEntities);
 
   useEffect(() => {
-    console.log(`[SYSTEM] Game State Transition: ${gameState}`);
+    console.log(`[SYSTEM] Game State Transition: ${gameState}, Level: ${currentLevel}`);
     // Expose for debugging
     (window as any).gameState = gameState;
 
     if (gameState === 'PLAYING') {
-        spawnEntities(useGameStore.getState().currentLevel);
+        spawnEntities(currentLevel);
     }
-  }, [gameState, spawnEntities]);
+  }, [gameState, currentLevel, spawnEntities]);
 
   const startRun = useCallback(async () => {
     try {
