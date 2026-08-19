@@ -98,8 +98,10 @@ const HexTile: React.FC<HexTileProps> = ({ q, r }) => {
         return currentLevel >= 30 ? "#FF0000" : "#FFFF00";
       case 'VOID':
         return "#000000";
-      default:
-        return "#1a0b2e";
+      default: {
+        const themeColors = ["#1a0b2e", "#0b1e2e", "#0b2e1a", "#2e1b0b", "#2e0b1f"];
+        return themeColors[(currentLevel - 1) % themeColors.length];
+      }
     }
   };
 
