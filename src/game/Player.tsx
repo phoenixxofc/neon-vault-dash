@@ -201,16 +201,34 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
         isCharging.current = true;
         chargeStartTime.current = Date.now();
       }
-      if (e.button === 2) handleDash('SIPHON');
+      if (e.button === 2) {
+        e.preventDefault();
+        handleDash('SIPHON');
+      }
     };
     const onMouseUp = (e: MouseEvent) => {
       if (e.button === 0) handleDash('STANDARD');
     };
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'KeyE') {
+        e.preventDefault();
+        handleDash('SIPHON');
+      }
+    };
+
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('contextmenu', onContextMenu);
+    window.addEventListener('keydown', onKeyDown);
+
     return () => {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('contextmenu', onContextMenu);
+      window.removeEventListener('keydown', onKeyDown);
     };
   }, [useGamepad]);
 
@@ -225,10 +243,10 @@ const Player = forwardRef<THREE.Group>((_, ref) => {
   }, [setUseGamepad]);
 
   return (
-    <group ref={meshRef} position={[0, 0.5, 0]}>
+    <group ref={meshRef} position={[0, 0.5, 0]} scale={[1.8, 1.8, 1.8]}>
       <Trail
-        width={1.5}
-        length={8}
+        width={1.8}
+        length={10}
         color={new THREE.Color(trailColor)}
         attenuation={(t) => t * t}
       >

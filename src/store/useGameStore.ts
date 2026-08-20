@@ -158,13 +158,13 @@ export const useGameStore = create<GameState>((set) => ({
   spawnEntities: (level) => set(() => {
     const newEntities: Entity[] = [];
 
-    // Spawning Shards
+    // Spawning Shards within [-6, 6] bounds to avoid HUD overlay corners
     const shardCount = 5 + Math.floor(level / 2);
     for (let i = 0; i < shardCount; i++) {
       newEntities.push({
         id: `shard-${level}-${i}`,
         type: 'SHARD',
-        position: [(Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20]
+        position: [(Math.random() - 0.5) * 12, 0.5, (Math.random() - 0.5) * 12]
       });
     }
 
@@ -176,7 +176,7 @@ export const useGameStore = create<GameState>((set) => ({
             newEntities.push({
                 id: `enemy-t1-${level}-${i}`,
                 type: 'ENEMY_T1',
-                position: [(Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20]
+                position: [(Math.random() - 0.5) * 14, 0.5, (Math.random() - 0.5) * 14]
             });
         }
     }

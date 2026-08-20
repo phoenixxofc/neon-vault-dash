@@ -14,7 +14,9 @@ import VaultEntryOverlay from './components/VaultEntryOverlay';
 import ForgeMenu from './components/ForgeMenu';
 import GameOver from './components/GameOver';
 import ErrorBoundary from './components/ErrorBoundary';
+import TutorialModal from './components/TutorialModal';
 import { Html } from '@react-three/drei';
+import { useState } from 'react';
 
 const GameLoadingFallback = () => (
     <Html center>
@@ -43,6 +45,8 @@ function App() {
     }
   }, [gameState, currentLevel, spawnEntities]);
 
+  const [showTutorial, setShowTutorial] = useState(false);
+
   const startRun = useCallback(async () => {
     try {
       if (document.documentElement.requestFullscreen) {
@@ -51,7 +55,13 @@ function App() {
     } catch (e) {
       console.warn("Fullscreen request denied", e);
     }
-    setGameState('LOADING');
+
+    const skipTutorial = localStorage.getItem('neon_vault_skip_tutorial');
+    if (skipTutorial === 'true') {
+      setGameState('LOADING');
+    } else {
+      setShowTutorial(true);
+    }
   }, [setGameState]);
 
   const playerRef = useRef<THREE.Group>(null);
@@ -87,6 +97,14 @@ function App() {
           </div>
         )}
 
+        {showTutorial && (
+          <TutorialModal
+            onClose={() => {
+              setShowTutorial(false);
+              setGameState('LOADING');
+            }}
+          />
+        )}
         {gameState === 'LOADING' ? <VaultEntryOverlay /> : <></>}
         {gameState === 'FORGE' ? <ForgeMenu /> : <></>}
         {gameState === 'GAMEOVER' ? <GameOver /> : <></>}
@@ -94,11 +112,12 @@ function App() {
 
         <div className="w-full h-full relative" style={{ minHeight: '100vh', width: '100vw' }}>
           <Canvas
-            shadows
+            shadows={false}
+            dpr={1}
+            gl={{ antialias: false, powerPreference: 'high-performance' }}
             camera={{ position: [0, 15, 15], fov: 45 }}
             onCreated={({ gl }) => {
               gl.setClearColor('#050505');
-              console.log("[SYSTEM] WebGL Context Initialized");
             }}
             onError={(e) => console.error("[SYSTEM] Canvas Error:", e)}
           >

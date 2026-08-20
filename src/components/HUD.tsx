@@ -8,7 +8,7 @@ const HUD: React.FC = () => {
     <div className="fixed inset-0 pointer-events-none p-8 font-mono flex flex-col justify-between z-10">
       <div className="flex justify-between items-start">
         <div className="bg-black/50 border border-neon-cyan p-4">
-          <div className="text-xs text-neon-cyan mb-1">INTEGRITY_INDEX</div>
+          <div className="text-xs text-neon-cyan mb-1">HEALTH_INDEX (HP)</div>
           <div className="w-48 h-4 bg-void-purple relative">
              <div
                className="h-full bg-neon-cyan transition-all duration-300"
